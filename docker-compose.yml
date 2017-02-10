@@ -10,6 +10,8 @@ services:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial.com/:/var/www/vainsocial
+            - ../apigrabber:/apps/api
+            - ../analyzer:/apps/cli
 
 ### Workspace Utilities Container ###########################
 
@@ -76,7 +78,6 @@ services:
             - PHP_IDE_CONFIG=serverName=laravel
 
 ### Nginx Server Container ##################################
-
 ### The webroot is mapped to vainsocial.dev (entry in hosts file)
 
     nginx:
@@ -96,22 +97,23 @@ services:
         links:
             - php-fpm
 
-### Apache Server Container #################################
+### Python Container
+    apigrabber:
+        container_name: vaindock_apigrabber
+        build: ../apigrabber
+        volumes_from:
+            - applications
+        ports:
+          - "8080:8080"
+        links:
+          - vaindock_postgres_raw
+        environment:
+          - POSTGRESQL_HOST=vaindock_postgres_raw
+          - POSTGRESQL_PORT=5432
+          - POSTGRESQL_DB=vainsocial-raw
+          - POSTGRESQL_USER=vainraw
+          - POSTGRESQL_PASSWORD=vainraw
 
-    # apache2:
-    #     build:
-    #         context: ./apache2
-    #         args:
-    #             - PHP_SOCKET=php-fpm:9000
-    #     volumes_from:
-    #         - applications
-    #     volumes:
-    #         - ./logs/apache2:/var/log/apache2
-    #     ports:
-    #         - "80:80"
-    #         - "443:443"
-    #     links:
-    #         - php-fpm
 
 
 ### PostgreSQL Container - Web ####################################
@@ -142,16 +144,6 @@ services:
             POSTGRES_USER: vainraw
             POSTGRES_PASSWORD: vainraw
 
-
-### Redis Container #########################################
-
-#    redis:
-#        build: ./redis
-#        volumes:
-#            - redis:/data
-#        ports:
-#            - "6379:6379"
-
 ### pgAdmin Container #######################################
 
     pgadmin:
@@ -173,3 +165,22 @@ volumes:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"
+
+
+
+### Apache Server Container #################################
+
+    # apache2:
+    #     build:
+    #         context: ./apache2
+    #         args:
+    #             - PHP_SOCKET=php-fpm:9000
+    #     volumes_from:
+    #         - applications
+    #     volumes:
+    #         - ./logs/apache2:/var/log/apache2
+    #     ports:
+    #         - "80:80"
+    #         - "443:443"
+    #     links:
+    #         - php-fpm
