@@ -100,7 +100,7 @@ services:
 ### Python Container
     apigrabber:
         container_name: vaindock_apigrabber
-        build: ../apigrabber
+        build: ./python
         volumes_from:
             - applications
         ports:
