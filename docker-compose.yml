@@ -116,8 +116,7 @@ services:
 
 
 ### Python Container for processor
-    vaindock_python_processor:
-        container_name: vaindock_python_processor
+    processor:
         build: ./python
         volumes:
             - ../processor:/apps/api
