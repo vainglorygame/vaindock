@@ -37,6 +37,7 @@ Web:
  cp .env.dev .env // you can select the .env file of your choice
  composer update
  php artisan migrate
+ php artisan key:generate
  ```
 
 > the following will only work on a Unix based container. If you are using Windows, you will need to have NPM installed locally on your windows machine.
