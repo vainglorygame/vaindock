@@ -1,4 +1,4 @@
-FROM python:3.5-alpine
+FROM python:3.6-alpine
 ADD requirements.txt /
 RUN apk add --no-cache ca-certificates gcc linux-headers build-base
 RUN pip install -r /requirements.txt
