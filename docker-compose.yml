@@ -9,7 +9,7 @@ services:
         volumes:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
-            - ../vainsocial.com/:/var/www/vainsocial
+            - ../vainsocial/:/var/www/vainsocial
             - ../apigrabber:/apps/api
             - ../analyzer:/apps/climate
 
@@ -92,7 +92,7 @@ services:
             - ./logs/nginx/:/var/log/nginx
             - ./nginx/sites/:/etc/nginx/sites-available
         ports:
-            - "80:80"
+            - "88:80"
             - "443:443"
         links:
             - php-fpm
@@ -113,6 +113,11 @@ services:
           - POSTGRESQL_DB=vainsocial-raw
           - POSTGRESQL_USER=vainraw
           - POSTGRESQL_PASSWORD=vainraw
+          - VAINSOCIAL_REGIONS=sg
+          - VAINSOCIAL_STARTDATE=2017-02-18T00:00:01Z
+          - VAINSOCIAL_ENDDATE=2017-02-25T00:00:00Z
+        env_file:
+            - local.env
 
 
 ### Python Container for processor
