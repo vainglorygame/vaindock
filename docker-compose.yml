@@ -11,6 +11,7 @@ services:
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
             - ../apigrabber:/apps/api
+            - ../statscompiler:/apps/stats
             - ../analyzer:/apps/climate
 
 ### Workspace Utilities Container ###########################
@@ -125,6 +126,27 @@ services:
         build: ./python
         volumes:
             - ../processor:/apps/api
+        links:
+          - vaindock_postgres_raw
+          - vaindock_postgres_web
+        environment:
+          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
+          - POSTGRESQL_SOURCE_PORT=5432
+          - POSTGRESQL_SOURCE_DB=vainsocial-raw
+          - POSTGRESQL_SOURCE_USER=vainraw
+          - POSTGRESQL_SOURCE_PASSWORD=vainraw
+          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
+          - POSTGRESQL_DEST_PORT=5432
+          - POSTGRESQL_DEST_DB=vainsocial-web
+          - POSTGRESQL_DEST_USER=vainweb
+          - POSTGRESQL_DEST_PASSWORD=vainweb
+
+
+### Python Container for compiler
+    compiler:
+        build: ./python
+        volumes:
+            - ../statscompiler:/apps/api
         links:
           - vaindock_postgres_raw
           - vaindock_postgres_web
