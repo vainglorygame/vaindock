@@ -140,6 +140,8 @@ services:
           - POSTGRESQL_DEST_DB=vainsocial-web
           - POSTGRESQL_DEST_USER=vainweb
           - POSTGRESQL_DEST_PASSWORD=vainweb
+          - VAINSOCIAL_SPIDER=true
+          - VAINSOCIAL_ANALYZE=true
 
 
 ### Python Container for compiler
