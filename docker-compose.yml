@@ -11,7 +11,7 @@ services:
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
             - ../apigrabber:/apps/api
-            - ../spider:/apps/spider
+            - ../preloader:/apps/preloader
             - ../statscompiler:/apps/stats
             - ../analyzer:/apps/climate
 
@@ -121,12 +121,12 @@ services:
         env_file:
             - local.env
 
-### Python Container for spider
-    spider:
-        container_name: vaindock_spider
+### Python Container for preloader
+    preloader:
+        container_name: vaindock_preloader
         build: ./python
-        volumes_from:
-            - applications
+        volumes:
+            - ../preloader:/apps/api
         links:
           - vaindock_postgres_raw
         environment:
