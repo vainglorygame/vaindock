@@ -12,7 +12,7 @@ services:
             - ../vainsocial/:/var/www/vainsocial
             - ../apigrabber:/apps/api
             - ../preloader:/apps/preloader
-            - ../statscompiler:/apps/stats
+            - ../compiler:/apps/stats
             - ../analyzer:/apps/climate
 
 ### Workspace Utilities Container ###########################
@@ -166,7 +166,7 @@ services:
     compiler:
         build: ./python
         volumes:
-            - ../statscompiler:/apps/api
+            - ../compiler:/apps/api
         links:
           - vaindock_postgres_raw
           - vaindock_postgres_web
