@@ -14,6 +14,7 @@ services:
             - ../preloader:/apps/preloader
             - ../compiler:/apps/stats
             - ../analyzer:/apps/climate
+            - ../cruncher:/apps/cruncher
 
 ### Workspace Utilities Container ###########################
 
@@ -187,6 +188,26 @@ services:
         build: ./python
         volumes:
             - ../analyzer:/apps/api
+        links:
+          - vaindock_postgres_raw
+          - vaindock_postgres_web
+        environment:
+          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
+          - POSTGRESQL_SOURCE_PORT=5432
+          - POSTGRESQL_SOURCE_DB=vainsocial-raw
+          - POSTGRESQL_SOURCE_USER=vainraw
+          - POSTGRESQL_SOURCE_PASSWORD=vainraw
+          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
+          - POSTGRESQL_DEST_PORT=5432
+          - POSTGRESQL_DEST_DB=vainsocial-web
+          - POSTGRESQL_DEST_USER=vainweb
+          - POSTGRESQL_DEST_PASSWORD=vainweb
+
+### Python Container for cruncher
+    cruncher:
+        build: ./python
+        volumes:
+            - ../cruncher:/apps/api
         links:
           - vaindock_postgres_raw
           - vaindock_postgres_web
