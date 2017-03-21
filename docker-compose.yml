@@ -106,8 +106,6 @@ services:
         build: ./python
         volumes_from:
             - applications
-        ports:
-          - "8080:8080"
         links:
           - vaindock_postgres_raw
         environment:
