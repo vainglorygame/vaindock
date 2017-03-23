@@ -10,7 +10,6 @@ services:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
-            - ../vainstats/:/var/www/vainstats
             - ../apigrabber:/apps/api
             - ../preloader:/apps/preloader
             - ../compiler:/apps/stats
@@ -222,6 +221,21 @@ services:
           - POSTGRESQL_DEST_USER=vainweb
           - POSTGRESQL_DEST_PASSWORD=vainweb
 
+### Python Container for cruncher
+    mlm:
+        build: ./python
+        volumes:
+            - ../minionlivesmatter:/apps/api
+        links:
+          - vaindock_postgres_web
+        ports:
+            - "8081:5000"
+        environment:
+          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
+          - POSTGRESQL_DEST_PORT=5432
+          - POSTGRESQL_DEST_DB=vainsocial-web
+          - POSTGRESQL_DEST_USER=vainweb
+          - POSTGRESQL_DEST_PASSWORD=vainweb
 
 ### PostgreSQL Container - Web ####################################
 
