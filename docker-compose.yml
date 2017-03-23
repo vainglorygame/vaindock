@@ -99,6 +99,7 @@ services:
             - "443:443"
         links:
             - php-fpm
+            - mlm
 
 ### Python Container for apigrabber
     apigrabber:
