@@ -10,6 +10,7 @@ services:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
+            - ../vainstats/:/var/www/vainstats
             - ../apigrabber:/apps/api
             - ../preloader:/apps/preloader
             - ../compiler:/apps/stats
