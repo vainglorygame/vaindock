@@ -10,11 +10,6 @@ services:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
-            - ../apigrabber:/apps/api
-            - ../preloader:/apps/preloader
-            - ../compiler:/apps/stats
-            - ../analyzer:/apps/climate
-            - ../cruncher:/apps/cruncher
 
 ### Workspace Utilities Container ###########################
 
@@ -44,8 +39,8 @@ services:
         ports:
            - "2222:22"
         links:
-            - vaindock_postgres_raw
-            - vaindock_postgres_web
+            - vaindock_rabbitmq
+            - vaindock_postgres
         tty: true
 
 ### PHP-FPM Container #######################################
@@ -71,8 +66,7 @@ services:
             - "9000"
         links:
             - workspace
-            - vaindock_postgres_raw
-            - vaindock_postgres_web
+            - vaindock_postgres
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -80,11 +74,7 @@ services:
             # IMPORTANT: Set the Remote Interpreter entry matching name to `laravel`
             - PHP_IDE_CONFIG=serverName=laravel
 
-### Nginx Server Container ##################################
-### The webroot is mapped to vainsocial.dev (entry in hosts file)
-
-    nginx:
-        container_name: vaindock_nginx
+    vaindock_nginx:
         build:
             context: ./nginx
             args:
@@ -97,138 +87,39 @@ services:
         ports:
             - "88:80"
             - "443:443"
-        links:
-            - php-fpm
 
-### Python Container for apigrabber
-    apigrabber:
-        container_name: vaindock_apigrabber
-        build: ./python
-        volumes_from:
-            - applications
-        links:
-          - vaindock_postgres_raw
+    vaindock_apigrabber:
+        build: ../apigrabber
+        volumes:
+          - ../apigrabber:/code
+          - ../joblib:/code/joblib
+        depends_on:
+          - vaindock_rabbitmq
         environment:
-          - POSTGRESQL_HOST=vaindock_postgres_raw
-          - POSTGRESQL_PORT=5432
-          - POSTGRESQL_DB=vainsocial-raw
-          - POSTGRESQL_USER=vainraw
-          - POSTGRESQL_PASSWORD=vainraw
-          - VAINSOCIAL_REGIONS=sg
-          - VAINSOCIAL_STARTDATE=2017-02-18T00:00:01Z
-          - VAINSOCIAL_ENDDATE=2017-02-25T00:00:00Z
+          - RABBITMQ_HOST=vaindock_rabbitmq
         env_file:
-            - local.env
+          - local.env
 
-### Python Container for preloader
-    preloader:
-        container_name: vaindock_preloader
-        build: ./python
+    vaindock_processor:
+        build: ../processor
         volumes:
-            - ../preloader:/apps/api
-        links:
-          - vaindock_postgres_raw
+          - ../processor:/code
+          - ../joblib:/code/joblib
+        depends_on:
+          - vaindock_rabbitmq
+          - vaindock_postgres
         environment:
-          - POSTGRESQL_HOST=vaindock_postgres_raw
-          - POSTGRESQL_PORT=5432
-          - POSTGRESQL_DB=vainsocial-raw
-          - POSTGRESQL_USER=vainraw
-          - POSTGRESQL_PASSWORD=vainraw
-          - VAINSOCIAL_SPIDERTHROTTLE=5
-        env_file:
-            - local.env
+          - RABBITMQ_HOST=vaindock_rabbitmq
+          - POSTGRESQL_HOST=vaindock_postgres
+          - POSTGRESQL_DB=vainsocial-web
+          - POSTGRESQL_USER=vainweb
+          - POSTGRESQL_PASSWORD=vainweb
 
-### Python Container for processor
-    processor:
-        build: ./python
+
+    vaindock_postgres:
+        image: postgres:9.6-alpine
         volumes:
-            - ../processor:/apps/api
-        links:
-          - vaindock_postgres_raw
-          - vaindock_postgres_web
-        environment:
-          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
-          - POSTGRESQL_SOURCE_PORT=5432
-          - POSTGRESQL_SOURCE_DB=vainsocial-raw
-          - POSTGRESQL_SOURCE_USER=vainraw
-          - POSTGRESQL_SOURCE_PASSWORD=vainraw
-          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
-          - POSTGRESQL_DEST_PORT=5432
-          - POSTGRESQL_DEST_DB=vainsocial-web
-          - POSTGRESQL_DEST_USER=vainweb
-          - POSTGRESQL_DEST_PASSWORD=vainweb
-          - VAINSOCIAL_SPIDER=true
-          - VAINSOCIAL_ANALYZE=true
-
-
-### Python Container for compiler
-    compiler:
-        build: ./python
-        volumes:
-            - ../compiler:/apps/api
-        links:
-          - vaindock_postgres_raw
-          - vaindock_postgres_web
-        environment:
-          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
-          - POSTGRESQL_SOURCE_PORT=5432
-          - POSTGRESQL_SOURCE_DB=vainsocial-raw
-          - POSTGRESQL_SOURCE_USER=vainraw
-          - POSTGRESQL_SOURCE_PASSWORD=vainraw
-          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
-          - POSTGRESQL_DEST_PORT=5432
-          - POSTGRESQL_DEST_DB=vainsocial-web
-          - POSTGRESQL_DEST_USER=vainweb
-          - POSTGRESQL_DEST_PASSWORD=vainweb
-
-### Python Container for analyzer
-    analyzer:
-        build: ./python
-        volumes:
-            - ../analyzer:/apps/api
-        links:
-          - vaindock_postgres_raw
-          - vaindock_postgres_web
-        environment:
-          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
-          - POSTGRESQL_SOURCE_PORT=5432
-          - POSTGRESQL_SOURCE_DB=vainsocial-raw
-          - POSTGRESQL_SOURCE_USER=vainraw
-          - POSTGRESQL_SOURCE_PASSWORD=vainraw
-          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
-          - POSTGRESQL_DEST_PORT=5432
-          - POSTGRESQL_DEST_DB=vainsocial-web
-          - POSTGRESQL_DEST_USER=vainweb
-          - POSTGRESQL_DEST_PASSWORD=vainweb
-
-### Python Container for cruncher
-    cruncher:
-        build: ./python
-        volumes:
-            - ../cruncher:/apps/api
-        links:
-          - vaindock_postgres_raw
-          - vaindock_postgres_web
-        environment:
-          - POSTGRESQL_SOURCE_HOST=vaindock_postgres_raw
-          - POSTGRESQL_SOURCE_PORT=5432
-          - POSTGRESQL_SOURCE_DB=vainsocial-raw
-          - POSTGRESQL_SOURCE_USER=vainraw
-          - POSTGRESQL_SOURCE_PASSWORD=vainraw
-          - POSTGRESQL_DEST_HOST=vaindock_postgres_web
-          - POSTGRESQL_DEST_PORT=5432
-          - POSTGRESQL_DEST_DB=vainsocial-web
-          - POSTGRESQL_DEST_USER=vainweb
-          - POSTGRESQL_DEST_PASSWORD=vainweb
-
-
-### PostgreSQL Container - Web ####################################
-
-    vaindock_postgres_web:
-        container_name: vaindock_postgres_web
-        build: ./postgres
-        volumes:
-            - vaindock_pg_web:/var/lib/postgresql/data
+            - vaindock_postgres-data:/var/lib/postgresql/data
         ports:
             - "5432:5432"
         environment:
@@ -236,57 +127,24 @@ services:
             POSTGRES_USER: vainweb
             POSTGRES_PASSWORD: vainweb
 
-### PostgreSQL Container - Raw ####################################
 
-    vaindock_postgres_raw:
-        container_name: vaindock_postgres_raw
-        build: ./postgres
+    vaindock_rabbitmq:
+        image: rabbitmq:3-management-alpine
         volumes:
-            - vaindock_pg_raw:/var/lib/postgresql/data
+          - vaindock_rabbitmq-data:/var/lib/rabbitmq
         ports:
-            - "5433:5432"
+          - "4369:4369"
+          - "5671:5671"
+          - "5672:5672"
+          - "25672:25672"
+          - "8881:15672"  # management guest/guest
         environment:
-            POSTGRES_DB: vainsocial-raw
-            POSTGRES_USER: vainraw
-            POSTGRES_PASSWORD: vainraw
-
-### pgAdmin Container #######################################
-
-    pgadmin:
-        container_name: vaindock_pgadmin
-        build: ./pgadmin
-        ports:
-            - "5050:5050"
-        links:
-            - vaindock_postgres_raw
-            - vaindock_postgres_web
-
-
-### Volumes Setup ###########################################
+          - RABBITMQ_HIPE_COMPILE=1
 
 volumes:
-    vaindock_pg_raw:
+    vaindock_postgres-data:
         driver: "local"
-    vaindock_pg_web:
+    vaindock_rabbitmq-data:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"
-
-
-
-### Apache Server Container #################################
-
-    # apache2:
-    #     build:
-    #         context: ./apache2
-    #         args:
-    #             - PHP_SOCKET=php-fpm:9000
-    #     volumes_from:
-    #         - applications
-    #     volumes:
-    #         - ./logs/apache2:/var/log/apache2
-    #     ports:
-    #         - "80:80"
-    #         - "443:443"
-    #     links:
-    #         - php-fpm
