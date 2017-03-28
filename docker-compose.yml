@@ -277,6 +277,19 @@ services:
             - vaindock_postgres_raw
             - vaindock_postgres_web
 
+### pgAdmin Container #######################################
+    mdbweb:
+        container_name: vaindock_mdb_web
+        build: ./mariadb
+        volumes:
+          - vaindock_mdb_web:/var/lib/mysql
+        ports:
+          - 3306:3306
+        environment:
+          - MYSQL_DATABASE=vainweb
+          - MYSQL_USER=vainweb
+          - MYSQL_PASSWORD=vainweb
+          - MYSQL_ROOT_PASSWORD=vainweb
 
 ### Volumes Setup ###########################################
 
@@ -284,6 +297,8 @@ volumes:
     vaindock_pg_raw:
         driver: "local"
     vaindock_pg_web:
+        driver: "local"
+    vaindock_mdb_web:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"
