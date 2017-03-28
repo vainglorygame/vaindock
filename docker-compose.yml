@@ -88,33 +88,40 @@ services:
             - "88:80"
             - "443:443"
 
+    vaindock_updater:
+      build: ../updater
+      ports:
+        - "8880:8880"
+      volumes:
+        - ../updater:/usr/src/app
+      depends_on:
+        - vaindock_rabbitmq
+      environment:
+        - RABBITMQ_URI=amqp://vaindock_rabbitmq
+      env_file:
+        - local.env
+
     vaindock_apigrabber:
         build: ../apigrabber
         volumes:
-          - ../apigrabber:/code
-          - ../joblib:/code/joblib
+          - ../apigrabber:/usr/src/app
         depends_on:
           - vaindock_rabbitmq
         environment:
-          - RABBITMQ_HOST=vaindock_rabbitmq
+          - RABBITMQ_URI=amqp://vaindock_rabbitmq
         env_file:
           - local.env
 
     vaindock_processor:
         build: ../processor
         volumes:
-          - ../processor:/code
-          - ../joblib:/code/joblib
+          - ../processor:/usr/src/app
         depends_on:
           - vaindock_rabbitmq
-          - vaindock_postgres
+          - vaindock_mariadb
         environment:
-          - RABBITMQ_HOST=vaindock_rabbitmq
-          - POSTGRESQL_HOST=vaindock_postgres
-          - POSTGRESQL_DB=vainsocial-web
-          - POSTGRESQL_USER=vainweb
-          - POSTGRESQL_PASSWORD=vainweb
-
+          - RABBITMQ_URI=amqp://vaindock_rabbitmq
+          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_mariadb/vainsocial-web
 
     vaindock_postgres:
         image: postgres:9.6-alpine
@@ -127,6 +134,17 @@ services:
             POSTGRES_USER: vainweb
             POSTGRES_PASSWORD: vainweb
 
+    vaindock_mariadb:
+      image: mariadb:10
+      volumes:
+        - vaindock_mariadb-data:/var/lib/mysql
+      ports:
+        - "3306:3306"
+      environment:
+        MYSQL_DATABASE: vainsocial-web
+        MYSQL_USER: vainweb
+        MYSQL_PASSWORD: vainweb
+        MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
     vaindock_rabbitmq:
         image: rabbitmq:3-management-alpine
@@ -143,6 +161,8 @@ services:
 
 volumes:
     vaindock_postgres-data:
+        driver: "local"
+    vaindock_mariadb-data:
         driver: "local"
     vaindock_rabbitmq-data:
         driver: "local"
