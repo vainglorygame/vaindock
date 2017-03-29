@@ -40,7 +40,6 @@ services:
            - "2222:22"
         links:
             - vaindock_rabbitmq
-            - vaindock_postgres
         tty: true
 
 ### PHP-FPM Container #######################################
@@ -62,11 +61,11 @@ services:
             dockerfile: Dockerfile-70
         volumes_from:
             - applications
+            - vaindock_mariadb
         expose:
             - "9000"
         links:
             - workspace
-            - vaindock_postgres
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -121,18 +120,7 @@ services:
           - vaindock_mariadb
         environment:
           - RABBITMQ_URI=amqp://vaindock_rabbitmq
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_mariadb/vainsocial-web
-
-    vaindock_postgres:
-        image: postgres:9.6-alpine
-        volumes:
-            - vaindock_postgres-data:/var/lib/postgresql/data
-        ports:
-            - "5432:5432"
-        environment:
-            POSTGRES_DB: vainsocial-web
-            POSTGRES_USER: vainweb
-            POSTGRES_PASSWORD: vainweb
+          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_mariadb/vainweb
 
     vaindock_mariadb:
       image: mariadb:10
@@ -141,10 +129,20 @@ services:
       ports:
         - "3306:3306"
       environment:
-        MYSQL_DATABASE: vainsocial-web
+        MYSQL_DATABASE: vainweb
         MYSQL_USER: vainweb
         MYSQL_PASSWORD: vainweb
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
+
+    vaindock_phpmyadmin:
+      image: phpmyadmin/phpmyadmin:4.6
+      environment:
+        - PMA_ARBITRARY=1
+        - PMA_HOST=vaindock_mariadb
+      ports:
+        - "8882:80"
+      volumes:
+        - /sessions
 
     vaindock_rabbitmq:
         image: rabbitmq:3-management-alpine
@@ -160,8 +158,6 @@ services:
           - RABBITMQ_HIPE_COMPILE=1
 
 volumes:
-    vaindock_postgres-data:
-        driver: "local"
     vaindock_mariadb-data:
         driver: "local"
     vaindock_rabbitmq-data:
