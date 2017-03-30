@@ -106,6 +106,7 @@ services:
           - ../apigrabber:/usr/src/app
         depends_on:
           - vaindock_queue
+          - vaindock_db-web
         environment:
           - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
         env_file:
