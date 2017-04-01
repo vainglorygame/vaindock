@@ -18,6 +18,8 @@ then
    rabbitmqctl set_permissions -p / apigrabber ".*" ".*" ".*"
    rabbitmqctl add_user processor processor
    rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
+   rabbitmqctl add_user compiler compiler
+   rabbitmqctl set_permissions -p / compiler ".*" ".*" ".*"
 
    echo "setup completed"
 else
