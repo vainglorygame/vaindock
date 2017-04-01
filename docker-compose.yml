@@ -93,10 +93,13 @@ services:
         - "8880:8880"
       volumes:
         - ../updater:/usr/src/app
+        - ../orm:/usr/src/orm
       depends_on:
         - vaindock_queue
+        - vaindock_db-web
       environment:
         - RABBITMQ_URI=amqp://updater:updater@vaindock_queue/
+        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
       env_file:
         - local.env
 
