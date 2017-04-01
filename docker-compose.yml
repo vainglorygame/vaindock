@@ -116,6 +116,7 @@ services:
         build: ../processor
         volumes:
           - ../processor:/usr/src/app
+          - ../orm:/usr/src/orm
         depends_on:
           - vaindock_queue
           - vaindock_db-web
