@@ -1,0 +1,165 @@
+version: '2'
+
+services:
+
+### Applications Code Container #############################
+
+    applications:
+        image: tianon/true
+        volumes:
+            # as long as all the Vainglory repo are checked out on the same level this will work just fine 
+            # volume to map Vainsocial.com code. used by Workspace repo.
+            - ../vainsocial/:/var/www/vainsocial
+
+### Workspace Utilities Container ###########################
+
+    workspace:
+        container_name: vaindock_workspace
+        build:
+            context: ./workspace
+            args:
+                - INSTALL_XDEBUG=true
+                - INSTALL_NODE=false  # required is node is not installed locally
+                - INSTALL_YARN=false  
+                - INSTALL_V8JS_EXTENSION=false
+                - COMPOSER_GLOBAL_INSTALL=true  # required if composer is not installed locally
+                - INSTALL_WORKSPACE_SSH=true
+                - INSTALL_LARAVEL_ENVOY=false
+                - INSTALL_DEPLOYER=false
+                - PUID=1000
+                - PGID=1000
+                - NODE_VERSION=stable
+                - YARN_VERSION=latest
+                - TZ=UTC
+        volumes_from:
+            - applications
+        extra_hosts:
+            # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
+            - "dockerhost:10.0.75.1"
+        ports:
+           - "2222:22"
+        links:
+            - vaindock_queue
+        tty: true
+
+### PHP-FPM Container #######################################
+
+    php-fpm:
+        container_name: vaindock_php-fpm
+        build:
+            context: ./php-fpm
+            args:
+                - INSTALL_XDEBUG=true
+                - INSTALL_SOAP=false
+                - INSTALL_MONGO=false
+                - INSTALL_ZIP_ARCHIVE=false
+                - INSTALL_BCMATH=false
+                - INSTALL_PHPREDIS=true
+                - INSTALL_MEMCACHED=false
+                - INSTALL_OPCACHE=false
+                - INSTALL_EXIF=false
+            dockerfile: Dockerfile-70
+        volumes_from:
+            - applications
+            - vaindock_db-web
+        expose:
+            - "9000"
+        links:
+            - workspace
+        extra_hosts:
+            # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
+            - "dockerhost:10.0.75.1"
+        environment:
+            # IMPORTANT: Set the Remote Interpreter entry matching name to `laravel`
+            - PHP_IDE_CONFIG=serverName=laravel
+
+    vaindock_nginx:
+        build:
+            context: ./nginx
+            args:
+                - PHP_UPSTREAM=php-fpm
+        volumes_from:
+            - applications
+        volumes:
+            - ./logs/nginx/:/var/log/nginx
+            - ./nginx/sites/:/etc/nginx/sites-available
+        ports:
+            - "88:80"
+            - "443:443"
+
+    vaindock_updater:
+      build: ../updater
+      ports:
+        - "8880:8880"
+      volumes:
+        - ../updater:/usr/src/app
+        - ../orm:/usr/src/orm
+      depends_on:
+        - vaindock_queue
+      environment:
+        - RABBITMQ_URI=
+        - DATABASE_URI=
+      env_file:
+        - local.env
+
+    vaindock_apigrabber:
+        build: ../apigrabber
+        volumes:
+          - ../apigrabber:/usr/src/app
+        depends_on:
+          - vaindock_queue
+        environment:
+          - RABBITMQ_URI=
+        env_file:
+          - local.env
+
+    vaindock_processor:
+        build: ../processor
+        volumes:
+          - ../processor:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+        environment:
+          - RABBITMQ_URI=
+          - DATABASE_URI=
+        env_file:
+          - local.env
+
+    vaindock_compiler:
+        build: ../compiler
+        volumes:
+          - ../compiler:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+          - vaindock_db-web
+        environment:
+          - RABBITMQ_URI=
+          - DATABASE_URI=
+        env_file:
+          - local.env
+
+    vaindock_queue:
+        build: ./rabbitmq
+        volumes:
+          - vaindock_queue-data:/var/lib/queue
+        ports:
+          - "4369:4369"
+          - "5671:5671"
+          - "5672:5672"
+          - "25672:25672"
+          - "15674:15674"  # web-stomp
+          - "8881:15672"  # management guest/guest
+        environment:
+          - RABBITMQ_HIPE_COMPILE=
+        env_file:
+          - local.env
+
+volumes:
+    vaindock_db-web-data:
+        driver: "local"
+    vaindock_queue-data:
+        driver: "local"
+    sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
+        driver: "local"
