@@ -88,7 +88,6 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - vaindock_queue
-          - vaindock_db-web
         environment:
           - RABBITMQ_URI=
           - DATABASE_URI=
