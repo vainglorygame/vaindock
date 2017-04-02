@@ -64,7 +64,7 @@ services:
         depends_on:
           - vaindock_queue
         environment:
-          - RABBITMQ_URI=
+          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
         env_file:
           - local.env
 
@@ -76,8 +76,8 @@ services:
         depends_on:
           - vaindock_queue
         environment:
-          - RABBITMQ_URI=
-          - DATABASE_URI=
+          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - DATABASE_URI=mysql://vainsocial:Adagio&Ardan@vainsocial.cbvm9wxcsjow.us-west-2.rds.amazonaws.com/vainsocial_web
         env_file:
           - local.env
 
