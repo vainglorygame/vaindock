@@ -38,8 +38,6 @@ services:
             - "dockerhost:10.0.75.1"
         ports:
            - "2222:22"
-        links:
-            - vaindock_queue
         tty: true
 
 ### PHP-FPM Container #######################################
@@ -83,6 +81,9 @@ services:
         volumes:
             - ./logs/nginx/:/var/log/nginx
             - ./nginx/sites/:/etc/nginx/sites-available
+        links:
+            - workspace
+            - php-fpm
         ports:
             - "88:80"
             - "443:443"
