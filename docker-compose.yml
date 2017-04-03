@@ -84,6 +84,7 @@ services:
         links:
             - workspace
             - php-fpm
+            - vaindock_queue
         ports:
             - "88:80"
             - "443:443"
