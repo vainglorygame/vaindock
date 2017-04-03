@@ -89,19 +89,18 @@ services:
             - "88:80"
             - "443:443"
 
-    vaindock_updater:
-      build: ../updater
+    vaindock_bridge:
+      build: ../bridge
       ports:
         - "8880:8880"
       volumes:
-        - ../updater:/usr/src/app
+        - ../bridge:/usr/src/app
         - ../orm:/usr/src/orm
       depends_on:
         - vaindock_queue
         - vaindock_db-web
       environment:
-        - RABBITMQ_URI=amqp://updater:updater@vaindock_queue/
-        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+        - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
       env_file:
         - local.env
 
