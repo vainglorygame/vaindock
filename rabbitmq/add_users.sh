@@ -2,30 +2,31 @@
 set -e
 
 (
-count=0;
-# Execute list_users until service is up and running
-until timeout 5 rabbitmqctl list_users >/dev/null 2>/dev/null || (( count++ >= 20 )); do sleep 1; done;
-if ! rabbitmqctl list_users | grep bridge > /dev/null
+echo "waiting for rabbitmq"
+while ! rabbitmqctl list_users &> /dev/null
+do
+    sleep 1
+done
+if rabbitmqctl list_users | grep "web"
 then
-   # rabbitmqctl delete_user guest
-   rabbitmqctl add_user web web
-   rabbitmqctl set_permissions -p / web "^stomp-subscription-" "^stomp-subscription-" "^(amq.topic$|stomp-subscription-)"
-   # read only amq.topic on host /, but allow stomp subscribe
-   # services below: all allowed
-   rabbitmqctl add_user bridge bridge
-   rabbitmqctl set_permissions -p / bridge ".*" ".*" ".*"
-   rabbitmqctl add_user apigrabber apigrabber
-   rabbitmqctl set_permissions -p / apigrabber ".*" ".*" ".*"
-   rabbitmqctl add_user processor processor
-   rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
-   rabbitmqctl add_user compiler compiler
-   rabbitmqctl set_permissions -p / compiler ".*" ".*" ".*"
-
-   echo "setup completed"
-else
-   echo "already setup"
+    echo "users already exist, exiting"
+    exit 1
 fi
+echo "creating new users"
+# rabbitmqctl delete_user guest
+rabbitmqctl add_user web web
+rabbitmqctl set_permissions -p / web "^stomp-subscription-" "^stomp-subscription-" "^(amq.topic$|stomp-subscription-)"
+# read only amq.topic on host /, but allow stomp subscribe
+# services below: all allowed
+rabbitmqctl add_user bridge bridge
+rabbitmqctl set_permissions -p / bridge ".*" ".*" ".*"
+rabbitmqctl add_user apigrabber apigrabber
+rabbitmqctl set_permissions -p / apigrabber ".*" ".*" ".*"
+rabbitmqctl add_user processor processor
+rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
+rabbitmqctl add_user compiler compiler
+rabbitmqctl set_permissions -p / compiler ".*" ".*" ".*"
+echo "custom rabbitmq setup done."
 ) &
 
-# Call original entrypoint
 exec docker-entrypoint.sh rabbitmq-server $@

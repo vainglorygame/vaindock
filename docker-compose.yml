@@ -164,6 +164,7 @@ services:
 
     vaindock_queue:
         build: ./rabbitmq
+        hostname: vaindock_queue
         volumes:
           - vaindock_queue-data:/var/lib/queue
         ports:
