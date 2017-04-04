@@ -101,6 +101,7 @@ services:
         - vaindock_db-web
       environment:
         - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
+        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
       env_file:
         - local.env
 
