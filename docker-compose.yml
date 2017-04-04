@@ -176,6 +176,7 @@ services:
           - "8881:15672"  # management guest/guest
         environment:
           - RABBITMQ_HIPE_COMPILE=1
+          - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
 
 volumes:
     vaindock_db-web-data:

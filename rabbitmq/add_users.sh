@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
-set -e
-
 (
-echo "waiting for rabbitmq"
-while ! rabbitmqctl list_users &> /dev/null
-do
-    sleep 1
-done
-if rabbitmqctl list_users | grep "web"
-then
-    echo "users already exist, exiting"
-    exit 1
+if [[ $RABBITMQ_RECREATE_ON_STARTUP ]]; then
+    echo "*** *** deleting all data *** ***"
+    rm -r "/var/lib/rabbitmq/mnesia/rabbit@$(hostname)/"
 fi
-echo "creating new users"
+echo "*** *** waiting for rabbitmq *** ***"
+until rabbitmqctl status &>/dev/null; do sleep 1; done
+sleep 5
+echo "*** *** creating users *** ***"
 # rabbitmqctl delete_user guest
 rabbitmqctl add_user web web
 rabbitmqctl set_permissions -p / web "^stomp-subscription-" "^stomp-subscription-" "^(amq.topic$|stomp-subscription-)"
@@ -26,7 +21,7 @@ rabbitmqctl add_user processor processor
 rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
 rabbitmqctl add_user compiler compiler
 rabbitmqctl set_permissions -p / compiler ".*" ".*" ".*"
-echo "custom rabbitmq setup done."
+echo "*** *** custom rabbitmq setup done. *** ***"
 ) &
 
 exec docker-entrypoint.sh rabbitmq-server $@
