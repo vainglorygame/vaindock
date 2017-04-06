@@ -101,6 +101,7 @@ services:
         - vaindock_db-web
       environment:
         - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
+        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
       env_file:
         - local.env
 
@@ -140,6 +141,17 @@ services:
           - RABBITMQ_URI=amqp://compiler:compiler@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
 
+    vaindock_analyzer:
+        build: ../analyzer
+        volumes:
+          - ../analyzer:/usr/src/app
+        depends_on:
+          - vaindock_queue
+          - vaindock_db-web
+        environment:
+          - RABBITMQ_URI=amqp://analyzer:analyzer@vaindock_queue/
+          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@vaindock_db-web/vainweb
+
     vaindock_db-web:
       image: mariadb:10
       volumes:
@@ -164,6 +176,7 @@ services:
 
     vaindock_queue:
         build: ./rabbitmq
+        hostname: vaindock_queue
         volumes:
           - vaindock_queue-data:/var/lib/queue
         ports:
@@ -175,6 +188,7 @@ services:
           - "8881:15672"  # management guest/guest
         environment:
           - RABBITMQ_HIPE_COMPILE=1
+          - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
 
 volumes:
     vaindock_db-web-data:
