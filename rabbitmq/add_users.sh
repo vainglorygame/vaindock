@@ -19,8 +19,6 @@ rabbitmqctl add_user apigrabber apigrabber
 rabbitmqctl set_permissions -p / apigrabber ".*" ".*" ".*"
 rabbitmqctl add_user processor processor
 rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
-rabbitmqctl add_user compiler compiler
-rabbitmqctl set_permissions -p / compiler ".*" ".*" ".*"
 rabbitmqctl add_user analyzer analyzer
 rabbitmqctl set_permissions -p / analyzer ".*" ".*" ".*"
 echo "*** *** custom rabbitmq setup done. *** ***"
