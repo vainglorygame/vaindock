@@ -129,6 +129,18 @@ services:
           - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
 
+    vaindock_cruncher:
+        build: ../cruncher
+        volumes:
+          - ../cruncher:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+          - vaindock_db-web
+        environment:
+          - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+
     vaindock_analyzer:
         build: ../analyzer
         volumes:
