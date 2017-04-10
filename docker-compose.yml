@@ -129,18 +129,6 @@ services:
           - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
 
-    vaindock_compiler:
-        build: ../compiler
-        volumes:
-          - ../compiler:/usr/src/app
-          - ../orm:/usr/src/orm
-        depends_on:
-          - vaindock_queue
-          - vaindock_db-web
-        environment:
-          - RABBITMQ_URI=amqp://compiler:compiler@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
-
     vaindock_analyzer:
         build: ../analyzer
         volumes:
