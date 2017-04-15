@@ -118,6 +118,19 @@ services:
         env_file:
           - local.env
 
+    vaindock_discordbot:
+        build: ../discordbot
+        volumes:
+          - ../discordbot:/usr/src/app
+        depends_on:
+          - vaindock_nginx
+        environment:
+          - API_BE_URL=http://vaindock_nginx/bridge
+          - API_FE_URL=http://vaindock_nginx/bots/api
+          - API_WS_URL=http://vaindock_nginx/ws
+        env_file:
+          - local.env
+
     vaindock_processor:
         build: ../processor
         volumes:
