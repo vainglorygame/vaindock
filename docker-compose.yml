@@ -209,17 +209,6 @@ services:
           - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
 
-    vaindock_analyzer:
-        build: ../analyzer
-        volumes:
-          - ../analyzer:/usr/src/app
-        depends_on:
-          - vaindock_queue
-          - vaindock_db-web
-        environment:
-          - RABBITMQ_URI=amqp://analyzer:analyzer@vaindock_queue/
-          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@vaindock_db-web/vainweb
-
     vaindock_db-web:
       image: mariadb:10
       volumes:
