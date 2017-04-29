@@ -11,6 +11,41 @@ services:
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
 
+    backend:
+      image: tianon/true
+      depends_on:
+        - vaindock_queue
+        - vaindock_db-web
+        - vaindock_db-brawl
+        - vaindock_db-tournament
+        - vaindock_bridge
+        - vaindock_processor
+        - vaindock_processor_brawl
+        - vaindock_processor_tournament
+        - vaindock_apigrabber
+        - vaindock_apigrabber_brawl
+        - vaindock_apigrabber_tournament
+        - vaindock_cruncher
+
+    backend_light:
+      image: tianon/true
+      depends_on:
+        - vaindock_queue
+        - vaindock_db-web
+        - vaindock_db-brawl
+        - vaindock_db-tournament
+        - vaindock_bridge
+        - vaindock_processor
+        - vaindock_apigrabber
+        - vaindock_cruncher
+
+    frontend:
+      image: tianon/true
+      depends_on:
+        - vaindock_nginx
+        - php-fpm
+        - vaindock_db-web
+
 ### Workspace Utilities Container ###########################
 
     workspace:
@@ -101,10 +136,12 @@ services:
         - vaindock_queue
         - vaindock_db-web
         - vaindock_db-brawl
+        - vaindock_db-tournament
       environment:
         - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
         - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
         - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
+        - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
       env_file:
         - local.env
 
@@ -115,7 +152,6 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - vaindock_queue
-          - vaindock_db-web
         environment:
           - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
           - QUEUE=grab
@@ -132,11 +168,26 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - vaindock_queue
-          - vaindock_db-web
         environment:
           - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
           - QUEUE=grab_brawl
           - PROCESS_QUEUE=process_brawl
+          - SAMPLE_QUEUE=sample
+          - GRABBERS=1
+        env_file:
+          - local.env
+
+    vaindock_apigrabber_tournament:
+        build: ../apigrabber
+        volumes:
+          - ../apigrabber:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+        environment:
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - QUEUE=grab_tournament
+          - PROCESS_QUEUE=process_tournament
           - SAMPLE_QUEUE=sample
           - GRABBERS=1
         env_file:
@@ -197,6 +248,19 @@ services:
           - DATABASE_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
           - QUEUE=process_brawl
 
+    vaindock_processor_tournament:
+        build: ../processor
+        volumes:
+          - ../processor:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+          - vaindock_db-tournament
+        environment:
+          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - DATABASE_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+          - QUEUE=process_tournament
+
     vaindock_cruncher:
         build: ../cruncher
         volumes:
@@ -231,6 +295,16 @@ services:
         MYSQL_PASSWORD: vainbrawl
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
+    vaindock_db-tournament:
+      image: mariadb:10
+      volumes:
+        - vaindock_db-tournament-data:/var/lib/mysql
+      environment:
+        MYSQL_DATABASE: vaintournament
+        MYSQL_USER: vaintournament
+        MYSQL_PASSWORD: vaintournament
+        MYSQL_ALLOW_EMPTY_PASSWORD: 1
+
     vaindock_phpmyadmin:
       image: phpmyadmin/phpmyadmin:4.6
       environment:
@@ -260,6 +334,8 @@ volumes:
     vaindock_db-web-data:
         driver: "local"
     vaindock_db-brawl-data:
+        driver: "local"
+    vaindock_db-tournament-data:
         driver: "local"
     vaindock_queue-data:
         driver: "local"
