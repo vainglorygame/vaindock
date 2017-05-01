@@ -71,6 +71,10 @@ services:
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
+        links:
+            - vaindock_db-web
+            - vaindock_db-brawl
+            - vaindock_db-tournament
         ports:
            - "2222:22"
         tty: true
@@ -99,6 +103,9 @@ services:
             - "9000"
         links:
             - workspace
+            - vaindock_db-web
+            - vaindock_db-brawl
+            - vaindock_db-tournament
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -121,6 +128,9 @@ services:
             - php-fpm
             - vaindock_queue
             - vaindock_bridge
+            - vaindock_db-web
+            - vaindock_db-brawl
+            - vaindock_db-tournament
         ports:
             - "80:80"
             - "443:443"
@@ -219,18 +229,18 @@ services:
         env_file:
           - local.env
 
-    vaindock_discordbot:
-        build: ../discordbot
-        volumes:
-          - ../discordbot:/usr/src/app
-        depends_on:
-          - vaindock_nginx
-        environment:
-          - API_BE_URL=http://vaindock_nginx/bridge
-          - API_FE_URL=http://vaindock_nginx/bots/api
-          - API_WS_URL=http://vaindock_nginx/ws
-        env_file:
-          - local.env
+    # vaindock_discordbot:
+    #     build: ../discordbot
+    #     volumes:
+    #       - ../discordbot:/usr/src/app
+    #     depends_on:
+    #       - vaindock_nginx
+    #     environment:
+    #       - API_BE_URL=http://vaindock_nginx/bridge
+    #       - API_FE_URL=http://vaindock_nginx/bots/api
+    #       - API_WS_URL=http://vaindock_nginx/ws
+    #     env_file:
+    #       - local.env
 
     vaindock_processor:
         build: ../processor
@@ -299,6 +309,8 @@ services:
       image: mariadb:10
       volumes:
         - vaindock_db-brawl-data:/var/lib/mysql
+      ports:
+        - "3307:3306"
       environment:
         MYSQL_DATABASE: vainbrawl
         MYSQL_USER: vainbrawl
@@ -309,6 +321,8 @@ services:
       image: mariadb:10
       volumes:
         - vaindock_db-tournament-data:/var/lib/mysql
+      ports:
+        - "3308:3306"
       environment:
         MYSQL_DATABASE: vaintournament
         MYSQL_USER: vaintournament
