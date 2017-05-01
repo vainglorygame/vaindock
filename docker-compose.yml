@@ -142,6 +142,16 @@ services:
         - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
         - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
         - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+        - REGIONS=na,eu,sg,sa,ea
+        - TOURNAMENT_REGIONS=tournament-na,tournament-eu,tournament-sg,tournament-sa,tournament-ea
+        - BRAWL_RETENTION_DAYS=7
+        - PLAYER_PROCESS_QUEUE=process
+        - GRAB_QUEUE=grab
+        - GRAB_BRAWL_QUEUE=grab_brawl
+        - GRAB_TOURNAMENT_QUEUE=grab_tournament
+        - CRUNCH_QUEUE=crunch
+        - SAMPLE_QUEUE=sample
+        - CRUNCH_SHOVEL_SIZE=1000
       env_file:
         - local.env
 
