@@ -2,7 +2,7 @@
 (
 if [[ $RABBITMQ_RECREATE_ON_STARTUP ]]; then
     echo "*** *** deleting all data *** ***"
-    rm -r "/var/lib/rabbitmq/mnesia/rabbit@$(hostname)/" || echo "*** *** nothing to remove *** ***"
+    rm -rf "/var/lib/rabbitmq/mnesia/rabbit@$(hostname)/" || echo "*** *** nothing to remove *** ***"
 fi
 echo "*** *** waiting for rabbitmq *** ***"
 until rabbitmqctl status &>/dev/null; do sleep 1; done
