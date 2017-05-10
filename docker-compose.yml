@@ -11,45 +11,43 @@ services:
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
 
-    backend:
-      image: tianon/true
-      depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
-        - vaindock_bridge
-        - vaindock_processor
-        - vaindock_processor_brawl
-        - vaindock_processor_tournament
-        - vaindock_apigrabber
-        - vaindock_apigrabber_brawl
-        - vaindock_apigrabber_tournament
-        - vaindock_cruncher
+#     backend:
+#       image: tianon/true
+#       depends_on:
+#         - vaindock_queue
+#         - vaindock_db-web
+#         - vaindock_db-brawl
+#         - vaindock_db-tournament
+#         - vaindock_bridge
+#         - vaindock_processor
+#         - vaindock_processor_brawl
+#         - vaindock_processor_tournament
+#         - vaindock_apigrabber
+#         - vaindock_apigrabber_brawl
+#         - vaindock_apigrabber_tournament
+#         - vaindock_cruncher
 
     backend_light:
       image: tianon/true
       depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
-        - vaindock_bridge
-        - vaindock_processor
-        - vaindock_apigrabber
-        - vaindock_cruncher
+        - queue
+        - db-web
+        - bridge
+        - processor
+        - apigrabber
+        - cruncher
 
     frontend:
       image: tianon/true
       depends_on:
-        - vaindock_nginx
+        - nginx
         - php-fpm
-        - vaindock_db-web
+        - db-web
 
-### Workspace Utilities Container ###########################
+# ### Workspace Utilities Container ###########################
 
     workspace:
-        container_name: vaindock_workspace
+        container_name: workspace
         build:
             context: ./workspace
             args:
@@ -72,17 +70,17 @@ services:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
         links:
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - db-web
+            - db-brawl
+            - db-tournament
         ports:
            - "2222:22"
         tty: true
 
-### PHP-FPM Container #######################################
+# ### PHP-FPM Container #######################################
 
     php-fpm:
-        container_name: vaindock_php-fpm
+        container_name: php-fpm
         build:
             context: ./php-fpm
             args:
@@ -98,14 +96,14 @@ services:
             dockerfile: Dockerfile-70
         volumes_from:
             - applications
-            - vaindock_db-web
+            - db-web
         expose:
             - "9000"
         links:
             - workspace
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - db-web
+            - db-brawl
+            - db-tournament
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -113,7 +111,7 @@ services:
             # IMPORTANT: Set the Remote Interpreter entry matching name to `laravel`
             - PHP_IDE_CONFIG=serverName=laravel
 
-    vaindock_nginx:
+    nginx:
         build:
             context: ./nginx
             args:
@@ -126,16 +124,16 @@ services:
         links:
             - workspace
             - php-fpm
-            - vaindock_queue
-            - vaindock_bridge
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - queue
+            - bridge
+            - db-web
+            - db-brawl
+            - db-tournament
         ports:
             - "80:80"
             - "443:443"
 
-    vaindock_bridge:
+    bridge:
       build: ../bridge
       ports:
         - "8880:8880"
@@ -143,15 +141,15 @@ services:
         - ../bridge:/usr/src/app
         - ../orm:/usr/src/orm
       depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
+        - queue
+        - db-web
+        - db-brawl
+        - db-tournament
       environment:
-        - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
-        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
-        - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
-        - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+        - RABBITMQ_URI=amqp://bridge:bridge@queue/
+        - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+        - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
+        - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
         - REGIONS=na,eu,sg,sa,ea
         - TOURNAMENT_REGIONS=tournament-na,tournament-eu,tournament-sg,tournament-sa,tournament-ea
         - BRAWL_RETENTION_DAYS=7
@@ -165,15 +163,15 @@ services:
       env_file:
         - local.env
 
-    vaindock_apigrabber:
+    apigrabber:
         build: ../apigrabber
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab
           - PROCESS_QUEUE=process
           - SAMPLE_QUEUE=sample
@@ -181,15 +179,15 @@ services:
         env_file:
           - local.env
 
-    vaindock_apigrabber_brawl:
+    apigrabber_brawl:
         build: ../apigrabber
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab_brawl
           - PROCESS_QUEUE=process_brawl
           - SAMPLE_QUEUE=sample
@@ -197,15 +195,15 @@ services:
         env_file:
           - local.env
 
-    vaindock_apigrabber_tournament:
+    apigrabber_tournament:
         build: ../apigrabber
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab_tournament
           - PROCESS_QUEUE=process_tournament
           - SAMPLE_QUEUE=sample
@@ -213,15 +211,15 @@ services:
         env_file:
           - local.env
 
-    vaindock_sampler:
+    sampler:
         build: ../sampler
         volumes:
           - ../sampler:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://sampler:sampler@vaindock_queue/
+          - RABBITMQ_URI=amqp://sampler:sampler@queue/
           - QUEUE=sample
           - PROCESS_QUEUE=process
           - PROCESS_BRAWL_QUEUE=process_brawl
@@ -229,74 +227,74 @@ services:
         env_file:
           - local.env
 
-    # vaindock_discordbot:
-    #     build: ../discordbot
-    #     volumes:
-    #       - ../discordbot:/usr/src/app
-    #     depends_on:
-    #       - vaindock_nginx
-    #     environment:
-    #       - API_BE_URL=http://vaindock_nginx/bridge
-    #       - API_FE_URL=http://vaindock_nginx/bots/api
-    #       - API_WS_URL=http://vaindock_nginx/ws
-    #     env_file:
-    #       - local.env
+# vaindock_discordbot:
+#     build: ../discordbot
+#     volumes:
+#       - ../discordbot:/usr/src/app
+#     depends_on:
+#       - vaindock_nginx
+#     environment:
+#       - API_BE_URL=http://vaindock_nginx/bridge
+#       - API_FE_URL=http://vaindock_nginx/bots/api
+#       - API_WS_URL=http://vaindock_nginx/ws
+#     env_file:
+#       - local.env
 
-    vaindock_processor:
+    processor:
         build: ../processor
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
           - QUEUE=process
 
-    vaindock_processor_brawl:
+    processor_brawl:
         build: ../processor
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-brawl
+          - queue
+          - db-brawl
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
           - QUEUE=process_brawl
 
-    vaindock_processor_tournament:
+    processor_tournament:
         build: ../processor
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-tournament
+          - queue
+          - db-tournament
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=process_tournament
 
-    vaindock_cruncher:
+    cruncher:
         build: ../cruncher
         volumes:
           - ../cruncher:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
         environment:
-          - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
 
-    vaindock_db-web:
+    db-web:
       image: mariadb:10
       volumes:
-        - vaindock_db-web-data:/var/lib/mysql
+        - db-web-data:/var/lib/mysql
       ports:
         - "3306:3306"
       environment:
@@ -305,10 +303,10 @@ services:
         MYSQL_PASSWORD: vainweb
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_db-brawl:
+    db-brawl:
       image: mariadb:10
       volumes:
-        - vaindock_db-brawl-data:/var/lib/mysql
+        - db-brawl-data:/var/lib/mysql
       ports:
         - "3307:3306"
       environment:
@@ -317,10 +315,10 @@ services:
         MYSQL_PASSWORD: vainbrawl
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_db-tournament:
+    db-tournament:
       image: mariadb:10
       volumes:
-        - vaindock_db-tournament-data:/var/lib/mysql
+        - db-tournament-data:/var/lib/mysql
       ports:
         - "3308:3306"
       environment:
@@ -329,7 +327,7 @@ services:
         MYSQL_PASSWORD: vaintournament
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_phpmyadmin:
+    phpmyadmin:
       image: phpmyadmin/phpmyadmin:4.6
       environment:
         - PMA_ARBITRARY=1
@@ -338,11 +336,11 @@ services:
       volumes:
         - /sessions
 
-    vaindock_queue:
+    queue:
         build: ./rabbitmq
-        hostname: vaindock_queue
+        hostname: queue
         volumes:
-          - vaindock_queue-data:/var/lib/queue
+          - queue-data:/var/lib/queue
         ports:
           - "4369:4369"
           - "5671:5671"
@@ -355,13 +353,13 @@ services:
           - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
 
 volumes:
-    vaindock_db-web-data:
+    db-web-data:
         driver: "local"
-    vaindock_db-brawl-data:
+    db-brawl-data:
         driver: "local"
-    vaindock_db-tournament-data:
+    db-tournament-data:
         driver: "local"
-    vaindock_queue-data:
+    queue-data:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"
