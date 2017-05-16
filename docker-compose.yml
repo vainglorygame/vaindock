@@ -45,6 +45,7 @@ services:
         - vaindock_nginx
         - php-fpm
         - vaindock_db-web
+        - vaindock_phpmyadmin
 
 ### Workspace Utilities Container ###########################
 
