@@ -10,22 +10,23 @@ services:
             # as long as all the Vainglory repo are checked out on the same level this will work just fine 
             # volume to map Vainsocial.com code. used by Workspace repo.
             - ../vainsocial/:/var/www/vainsocial
+            - ../vainsocial-tournament/:/var/www/vainsocial-tournament
 
-#     backend:
-#       image: tianon/true
-#       depends_on:
-#         - vaindock_queue
-#         - vaindock_db-web
-#         - vaindock_db-brawl
-#         - vaindock_db-tournament
-#         - vaindock_bridge
-#         - vaindock_processor
-#         - vaindock_processor_brawl
-#         - vaindock_processor_tournament
-#         - vaindock_apigrabber
-#         - vaindock_apigrabber_brawl
-#         - vaindock_apigrabber_tournament
-#         - vaindock_cruncher
+    backend:
+      image: tianon/true
+      depends_on:
+        - queue
+        - db-web
+        - db-brawl
+        - db-tournament
+        - bridge
+        - processor
+        - processor_brawl
+        - processor_tournament
+        - apigrabber
+        - apigrabber_brawl
+        - apigrabber_tournament
+        - cruncher
 
     backend_light:
       image: tianon/true
@@ -98,6 +99,7 @@ services:
         volumes_from:
             - applications
             - db-web
+            - db-tournament
         expose:
             - "9000"
         links:
