@@ -43,6 +43,7 @@ services:
         - nginx
         - php-fpm
         - db-web
+        - phpmyadmin
 
 # ### Workspace Utilities Container ###########################
 
@@ -158,8 +159,9 @@ services:
         - GRAB_BRAWL_QUEUE=grab_brawl
         - GRAB_TOURNAMENT_QUEUE=grab_tournament
         - CRUNCH_QUEUE=crunch
+        - CRUNCH_TOURNAMENT_QUEUE=crunch_tournament
         - SAMPLE_QUEUE=sample
-        - CRUNCH_SHOVEL_SIZE=1000
+        - SHOVEL_SIZE=1000
       env_file:
         - local.env
 
@@ -291,6 +293,19 @@ services:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
           - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
 
+    cruncher_tournament:
+        build: ../cruncher
+        volumes:
+          - ../cruncher:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+          - db-web
+        environment:
+          - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-tournament/vaintournament
+          - QUEUE=crunch_tournament
+
     db-web:
       image: mariadb:10
       volumes:
@@ -335,6 +350,17 @@ services:
         - "8882:80"
       volumes:
         - /sessions
+
+    analyzer:
+      build: ../analyzer
+      volumes:
+          - ../analyzer:/usr/src/app
+      depends_on:
+          - queue
+          - db-web
+      environment:
+          - RABBITMQ_URI=amqp://analyzer:analyzer@queue/
+          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@db-web/vainweb
 
     queue:
         build: ./rabbitmq
