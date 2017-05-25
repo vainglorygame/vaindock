@@ -161,8 +161,9 @@ services:
         - GRAB_BRAWL_QUEUE=grab_brawl
         - GRAB_TOURNAMENT_QUEUE=grab_tournament
         - CRUNCH_QUEUE=crunch
+        - CRUNCH_TOURNAMENT_QUEUE=crunch_tournament
         - SAMPLE_QUEUE=sample
-        - CRUNCH_SHOVEL_SIZE=1000
+        - SHOVEL_SIZE=1000
       env_file:
         - local.env
 
@@ -293,6 +294,20 @@ services:
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - QUEUE=crunch
+
+    vaindock_cruncher_tournament:
+        build: ../cruncher
+        volumes:
+          - ../cruncher:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+          - vaindock_db-web
+        environment:
+          - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-tournament/vaintournament
+          - QUEUE=crunch_tournament
 
     vaindock_db-web:
       image: mariadb:10
