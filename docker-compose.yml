@@ -26,6 +26,7 @@ services:
         - vaindock_apigrabber_brawl
         - vaindock_apigrabber_tournament
         - vaindock_cruncher
+        - analyzer
 
     backend_light:
       image: tianon/true
@@ -163,7 +164,7 @@ services:
         - CRUNCH_QUEUE=crunch
         - CRUNCH_TOURNAMENT_QUEUE=crunch_tournament
         - SAMPLE_QUEUE=sample
-        - SHOVEL_SIZE=1000
+        - SHOVEL_SIZE=50000
       env_file:
         - local.env
 
@@ -295,6 +296,7 @@ services:
           - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
           - QUEUE=crunch
+          - SLOWMODE=100
 
     vaindock_cruncher_tournament:
         build: ../cruncher
@@ -319,6 +321,8 @@ services:
       environment:
           - RABBITMQ_URI=amqp://analyzer:analyzer@vaindock_queue/
           - DATABASE_URI=mysql+cymysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - BATCHSIZE=500
+          - CHUNKSIZE=100
 
     vaindock_db-web:
       image: mariadb:10
