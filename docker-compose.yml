@@ -44,6 +44,7 @@ services:
       image: tianon/true
       depends_on:
         - vaindock_nginx
+        - vaindock_queue
         - php-fpm
         - vaindock_db-web
         - vaindock_phpmyadmin
@@ -257,6 +258,8 @@ services:
           - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
           - QUEUE=process
+          - ANALYZE_QUEUE=analyze
+          - DOANALYZEMATCH=true
 
     vaindock_processor_brawl:
         build: ../processor
@@ -330,6 +333,8 @@ services:
         - vaindock_db-web-data:/var/lib/mysql
       ports:
         - "3306:3306"
+      volumes:
+        - ./mariadb:/etc/mysql/conf.d
       environment:
         MYSQL_DATABASE: vainweb
         MYSQL_USER: vainweb
@@ -361,7 +366,7 @@ services:
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
     vaindock_phpmyadmin:
-      image: phpmyadmin/phpmyadmin:4.6
+      image: phpmyadmin/phpmyadmin:edge-4.7
       environment:
         - PMA_ARBITRARY=1
       ports:
