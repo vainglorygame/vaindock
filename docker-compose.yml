@@ -302,7 +302,8 @@ services:
           - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
           - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
           - QUEUE=crunch
-          - SLOWMODE=100
+          - BATCHSIZE=100
+          - SLOWMODE=0
 
     vaindock_cruncher_tournament:
         build: ../cruncher
