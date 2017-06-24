@@ -26,6 +26,8 @@ services:
         - vaindock_apigrabber_brawl
         - vaindock_apigrabber_tournament
         - vaindock_cruncher
+        - vaindock_sampler
+        - vaindock_sampler_tournament
         - analyzer
         - analyzer_tournament
 
@@ -40,6 +42,7 @@ services:
         - vaindock_processor
         - vaindock_apigrabber
         - vaindock_cruncher
+        - vaindock_sampler
 
     frontend:
       image: tianon/true
@@ -166,6 +169,7 @@ services:
         - CRUNCH_QUEUE=crunch
         - CRUNCH_TOURNAMENT_QUEUE=crunch_tournament
         - SAMPLE_QUEUE=sample
+        - SAMPLE_TOURNAMENT_QUEUE=sample
         - SHOVEL_SIZE=50000
         - ANALYZE_QUEUE=analyze
         - ANALYZE_TOURNAMENT_QUEUE=analyze_tournament
@@ -231,6 +235,22 @@ services:
           - RABBITMQ_URI=amqp://sampler:sampler@vaindock_queue/
           - QUEUE=sample
           - PROCESS_QUEUE=process
+          - PROCESS_BRAWL_QUEUE=process_brawl
+          - SAMPLERS=5
+        env_file:
+          - local.env
+
+    vaindock_sampler_tournament:
+        build: ../sampler
+        volumes:
+          - ../sampler:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - vaindock_queue
+        environment:
+          - RABBITMQ_URI=amqp://sampler:sampler@vaindock_queue/
+          - QUEUE=sample_tournament
+          - PROCESS_QUEUE=process_tournament
           - PROCESS_BRAWL_QUEUE=process_brawl
           - SAMPLERS=5
         env_file:
