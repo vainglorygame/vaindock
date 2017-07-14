@@ -14,49 +14,53 @@ services:
     backend:
       image: tianon/true
       depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
-        - vaindock_bridge
-        - vaindock_processor
-        - vaindock_processor_brawl
-        - vaindock_processor_tournament
-        - vaindock_apigrabber
-        - vaindock_apigrabber_brawl
-        - vaindock_apigrabber_tournament
-        - vaindock_cruncher
-        - vaindock_sampler
-        - vaindock_sampler_tournament
+        - queue
+        - db-web
+        - db-brawl
+        - db-tournament
+        - bridge
+        - processor
+        - processor_brawl
+        - processor_tournament
+        - shrinker
+        - shrinker_brawl
+        - shrinker_tournament
+        - apigrabber
+        - apigrabber_brawl
+        - apigrabber_tournament
+        - cruncher
+        - telesucker
+        - telesucker_tournament
         - analyzer
         - analyzer_tournament
 
     backend_light:
       image: tianon/true
       depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
-        - vaindock_bridge
-        - vaindock_processor
-        - vaindock_apigrabber
-        - vaindock_cruncher
-        - vaindock_sampler
+        - queue
+        - db-web
+        - db-brawl
+        - db-tournament
+        - bridge
+        - processor
+        - shrinker
+        - apigrabber
+        - cruncher
+        - telesucker
 
     frontend:
       image: tianon/true
       depends_on:
-        - vaindock_nginx
-        - vaindock_queue
+        - nginx
+        - queue
         - php-fpm
-        - vaindock_db-web
-        - vaindock_phpmyadmin
+        - db-web
+        - phpmyadmin
 
 ### Workspace Utilities Container ###########################
 
     workspace:
-        container_name: vaindock_workspace
+        container_name: workspace
         build:
             context: ./workspace
             args:
@@ -79,9 +83,9 @@ services:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
         links:
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - db-web
+            - db-brawl
+            - db-tournament
         ports:
            - "2222:22"
         tty: true
@@ -89,7 +93,7 @@ services:
 ### PHP-FPM Container #######################################
 
     php-fpm:
-        container_name: vaindock_php-fpm
+        container_name: php-fpm
         build:
             context: ./php-fpm
             args:
@@ -105,14 +109,14 @@ services:
             dockerfile: Dockerfile-70
         volumes_from:
             - applications
-            - vaindock_db-web
+            - db-web
         expose:
             - "9000"
         links:
             - workspace
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - db-web
+            - db-brawl
+            - db-tournament
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -120,7 +124,7 @@ services:
             # IMPORTANT: Set the Remote Interpreter entry matching name to `laravel`
             - PHP_IDE_CONFIG=serverName=laravel
 
-    vaindock_nginx:
+    nginx:
         build:
             context: ./nginx
             args:
@@ -133,32 +137,34 @@ services:
         links:
             - workspace
             - php-fpm
-            - vaindock_queue
-            - vaindock_bridge
-            - vaindock_db-web
-            - vaindock_db-brawl
-            - vaindock_db-tournament
+            - queue
+            - bridge
+            - db-web
+            - db-brawl
+            - db-tournament
         ports:
             - "80:80"
             - "443:443"
 
-    vaindock_bridge:
+    bridge:
       build: ../bridge
+      stop_signal: SIGINT
+      restart: on-failure
       ports:
         - "8880:8880"
       volumes:
         - ../bridge:/usr/src/app
         - ../orm:/usr/src/orm
       depends_on:
-        - vaindock_queue
-        - vaindock_db-web
-        - vaindock_db-brawl
-        - vaindock_db-tournament
+        - queue
+        - db-web
+        - db-brawl
+        - db-tournament
       environment:
-        - RABBITMQ_URI=amqp://bridge:bridge@vaindock_queue/
-        - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
-        - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
-        - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+        - RABBITMQ_URI=amqp://bridge:bridge@queue/
+        - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+        - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
+        - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
         - REGIONS=na,eu,sg,sa,ea
         - TOURNAMENT_REGIONS=tournament-na,tournament-eu,tournament-sg,tournament-sa,tournament-ea
         - BRAWL_RETENTION_DAYS=7
@@ -168,174 +174,223 @@ services:
         - GRAB_TOURNAMENT_QUEUE=grab_tournament
         - CRUNCH_QUEUE=crunch
         - CRUNCH_TOURNAMENT_QUEUE=crunch_tournament
-        - SAMPLE_QUEUE=sample
-        - SAMPLE_TOURNAMENT_QUEUE=sample
+        - SAMPLE_QUEUE=telesuck
+        - SAMPLE_TOURNAMENT_QUEUE=telesuck
         - SHOVEL_SIZE=50000
         - ANALYZE_QUEUE=analyze
         - ANALYZE_TOURNAMENT_QUEUE=analyze_tournament
       env_file:
         - local.env
 
-    vaindock_apigrabber:
+    apigrabber:
         build: ../apigrabber
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab
           - PROCESS_QUEUE=process
-          - SAMPLE_QUEUE=sample
-          - GRABBERS=2
+          - SAMPLE_QUEUE=telesuck
         env_file:
           - local.env
 
-    vaindock_apigrabber_brawl:
+    apigrabber_brawl:
         build: ../apigrabber
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab_brawl
           - PROCESS_QUEUE=process_brawl
-          - SAMPLE_QUEUE=sample
-          - GRABBERS=1
+          - SAMPLE_QUEUE=telesuck
         env_file:
           - local.env
 
-    vaindock_apigrabber_tournament:
+    apigrabber_tournament:
         build: ../apigrabber
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../apigrabber:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://apigrabber:apigrabber@vaindock_queue/
+          - RABBITMQ_URI=amqp://apigrabber:apigrabber@queue/
           - QUEUE=grab_tournament
           - PROCESS_QUEUE=process_tournament
-          - SAMPLE_QUEUE=sample
-          - GRABBERS=1
+          - SAMPLE_QUEUE=telesuck
         env_file:
           - local.env
 
-    vaindock_sampler:
-        build: ../sampler
+    telesucker:
+        build: ../telesucker
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
-          - ../sampler:/usr/src/app
+          - ../telesucker:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://sampler:sampler@vaindock_queue/
-          - QUEUE=sample
-          - PROCESS_QUEUE=process
-          - PROCESS_BRAWL_QUEUE=process_brawl
+          - RABBITMQ_URI=amqp://telesucker:telesucker@queue/
+          - QUEUE=telesuck
+          - PROCESS_QUEUE=shrink
           - SAMPLERS=5
         env_file:
           - local.env
 
-    vaindock_sampler_tournament:
-        build: ../sampler
+    telesucker_tournament:
+        build: ../telesucker
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
-          - ../sampler:/usr/src/app
+          - ../telesucker:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://sampler:sampler@vaindock_queue/
-          - QUEUE=sample_tournament
-          - PROCESS_QUEUE=process_tournament
-          - PROCESS_BRAWL_QUEUE=process_brawl
+          - RABBITMQ_URI=amqp://telesucker:telesucker@queue/
+          - QUEUE=telesuck_tournament
+          - PROCESS_QUEUE=shrink_tournament
           - SAMPLERS=5
         env_file:
           - local.env
 
-    # vaindock_discordbot:
-    #     build: ../discordbot
-    #     volumes:
-    #       - ../discordbot:/usr/src/app
-    #     depends_on:
-    #       - vaindock_nginx
-    #     environment:
-    #       - API_BE_URL=http://vaindock_nginx/bridge
-    #       - API_FE_URL=http://vaindock_nginx/bots/api
-    #       - API_WS_URL=http://vaindock_nginx/ws
-    #     env_file:
-    #       - local.env
-
-    vaindock_processor:
+    processor:
         build: ../processor
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
           - QUEUE=process
           - ANALYZE_QUEUE=analyze
           - DOANALYZEMATCH=true
 
-    vaindock_processor_brawl:
+    processor_brawl:
         build: ../processor
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-brawl
+          - queue
+          - db-brawl
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vainbrawl:vainbrawl@vaindock_db-brawl/vainbrawl
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
           - QUEUE=process_brawl
 
-    vaindock_processor_tournament:
+    processor_tournament:
         build: ../processor
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-tournament
+          - queue
+          - db-tournament
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
-          - DATABASE_URI=mysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+          - RABBITMQ_URI=amqp://processor:processor@queue/
+          - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=process_tournament
 
-    vaindock_cruncher:
+    shrinker:
+        build: ../shrinker
+        stop_signal: SIGINT
+        restart: on-failure
+        volumes:
+          - ../shrinker:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+          - db-web
+        environment:
+          - RABBITMQ_URI=amqp://shrinker:shrinker@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - QUEUE=shrink
+          - ANALYZE_QUEUE=analyze
+          - DOANALYZEMATCH=true
+
+    shrinker_brawl:
+        build: ../shrinker
+        stop_signal: SIGINT
+        restart: on-failure
+        volumes:
+          - ../shrinker:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+          - db-brawl
+        environment:
+          - RABBITMQ_URI=amqp://shrinker:shrinker@queue/
+          - DATABASE_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
+          - QUEUE=process_brawl
+
+    shrinker_tournament:
+        build: ../shrinker
+        stop_signal: SIGINT
+        restart: on-failure
+        volumes:
+          - ../shrinker:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+          - db-tournament
+        environment:
+          - RABBITMQ_URI=amqp://shrinker:shrinker@queue/
+          - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
+          - QUEUE=shrink_tournament
+
+    cruncher:
         build: ../cruncher
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../cruncher:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
         environment:
-          - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
           - QUEUE=crunch
-          - BATCHSIZE=100
+          - BATCHSIZE=500
           - SLOWMODE=0
 
-    vaindock_cruncher_tournament:
+    cruncher_tournament:
         build: ../cruncher
+        stop_signal: SIGINT
+        restart: on-failure
         volumes:
           - ../cruncher:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
         environment:
-          - RABBITMQ_URI=amqp://cruncher:cruncher@vaindock_queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@vaindock_db-tournament/vaintournament
+          - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-tournament/vaintournament
           - QUEUE=crunch_tournament
 
     analyzer:
@@ -343,11 +398,11 @@ services:
       volumes:
           - ../analyzer:/usr/src/app
       depends_on:
-          - vaindock_queue
-          - vaindock_db-web
+          - queue
+          - db-web
       environment:
-          - RABBITMQ_URI=amqp://analyzer:analyzer@vaindock_queue/
-          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@vaindock_db-web/vainweb
+          - RABBITMQ_URI=amqp://analyzer:analyzer@queue/
+          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@db-web/vainweb
           - BATCHSIZE=500
           - CHUNKSIZE=100
           - QUEUE=analyze
@@ -357,19 +412,19 @@ services:
       volumes:
           - ../analyzer:/usr/src/app
       depends_on:
-          - vaindock_queue
-          - vaindock_db-tournament
+          - queue
+          - db-tournament
       environment:
-          - RABBITMQ_URI=amqp://analyzer:analyzer@vaindock_queue/
-          - DATABASE_URI=mysql+cymysql://vaintournament:vaintournament@vaindock_db-tournament/vaintournament
+          - RABBITMQ_URI=amqp://analyzer:analyzer@queue/
+          - DATABASE_URI=mysql+cymysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=analyze_tournament
           - BATCHSIZE=500
           - CHUNKSIZE=100
 
-    vaindock_db-web:
+    db-web:
       image: mariadb:10
       volumes:
-        - vaindock_db-web-data:/var/lib/mysql
+        - db-web-data:/var/lib/mysql
       ports:
         - "3306:3306"
       volumes:
@@ -380,10 +435,10 @@ services:
         MYSQL_PASSWORD: vainweb
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_db-brawl:
+    db-brawl:
       image: mariadb:10
       volumes:
-        - vaindock_db-brawl-data:/var/lib/mysql
+        - db-brawl-data:/var/lib/mysql
       ports:
         - "3307:3306"
       environment:
@@ -392,10 +447,10 @@ services:
         MYSQL_PASSWORD: vainbrawl
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_db-tournament:
+    db-tournament:
       image: mariadb:10
       volumes:
-        - vaindock_db-tournament-data:/var/lib/mysql
+        - db-tournament-data:/var/lib/mysql
       ports:
         - "3308:3306"
       environment:
@@ -404,7 +459,7 @@ services:
         MYSQL_PASSWORD: vaintournament
         MYSQL_ALLOW_EMPTY_PASSWORD: 1
 
-    vaindock_phpmyadmin:
+    phpmyadmin:
       image: phpmyadmin/phpmyadmin:edge-4.7
       environment:
         - PMA_ARBITRARY=1
@@ -413,11 +468,11 @@ services:
       volumes:
         - /sessions
 
-    vaindock_queue:
+    queue:
         build: ./rabbitmq
-        hostname: vaindock_queue
+        hostname: queue
         volumes:
-          - vaindock_queue-data:/var/lib/queue
+          - queue-data:/var/lib/queue
         ports:
           - "4369:4369"
           - "5671:5671"
@@ -430,13 +485,13 @@ services:
           - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
 
 volumes:
-    vaindock_db-web-data:
+    db-web-data:
         driver: "local"
-    vaindock_db-brawl-data:
+    db-brawl-data:
         driver: "local"
-    vaindock_db-tournament-data:
+    db-tournament-data:
         driver: "local"
-    vaindock_queue-data:
+    queue-data:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"

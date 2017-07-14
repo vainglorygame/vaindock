@@ -14,7 +14,7 @@ services:
 ### Workspace Utilities Container ###########################
 
     workspace:
-        container_name: vaindock_workspace
+        container_name: workspace
         build:
             context: ./workspace
             args:
@@ -39,10 +39,10 @@ services:
         ports:
            - "2222:22"
         links:
-            - vaindock_queue
+            - queue
         tty: true
 
-    vaindock_updater:
+    updater:
       build: ../updater
       ports:
         - "8880:8880"
@@ -50,54 +50,54 @@ services:
         - ../updater:/usr/src/app
         - ../orm:/usr/src/orm
       depends_on:
-        - vaindock_queue
+        - queue
       environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - RABBITMQ_URI=amqp://processor:processor@queue/
           - DATABASE_URI=mysql://vainsocial:Adagio&Ardan@vainsocial.cbvm9wxcsjow.us-west-2.rds.amazonaws.com/vainsocial_web
       env_file:
         - local.env
 
-    vaindock_apigrabber:
+    apigrabber:
         build: ../apigrabber
         volumes:
           - ../apigrabber:/usr/src/app
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - RABBITMQ_URI=amqp://processor:processor@queue/
         env_file:
           - local.env
 
-    vaindock_processor:
+    processor:
         build: ../processor
         volumes:
           - ../processor:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - RABBITMQ_URI=amqp://processor:processor@queue/
           - DATABASE_URI=mysql://vainsocial:Adagio&Ardan@vainsocial.cbvm9wxcsjow.us-west-2.rds.amazonaws.com/vainsocial_web
         env_file:
           - local.env
 
-    vaindock_compiler:
+    compiler:
         build: ../compiler
         volumes:
           - ../compiler:/usr/src/app
           - ../orm:/usr/src/orm
         depends_on:
-          - vaindock_queue
+          - queue
         environment:
-          - RABBITMQ_URI=amqp://processor:processor@vaindock_queue/
+          - RABBITMQ_URI=amqp://processor:processor@queue/
           - DATABASE_URI=mysql://vainsocial:Adagio&Ardan@vainsocial.cbvm9wxcsjow.us-west-2.rds.amazonaws.com/vainsocial_web
         env_file:
           - local.env
 
-    vaindock_queue:
+    queue:
         build: ./rabbitmq
         volumes:
-          - vaindock_queue-data:/var/lib/queue
+          - queue-data:/var/lib/queue
         ports:
           - "4369:4369"
           - "5671:5671"
@@ -111,9 +111,9 @@ services:
           - local.env
 
 volumes:
-    vaindock_db-web-data:
+    db-web-data:
         driver: "local"
-    vaindock_queue-data:
+    queue-data:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
         driver: "local"

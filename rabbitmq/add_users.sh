@@ -17,10 +17,12 @@ rabbitmqctl add_user bridge bridge
 rabbitmqctl set_permissions -p / bridge ".*" ".*" ".*"
 rabbitmqctl add_user apigrabber apigrabber
 rabbitmqctl set_permissions -p / apigrabber ".*" ".*" ".*"
-rabbitmqctl add_user sampler sampler
-rabbitmqctl set_permissions -p / sampler ".*" ".*" ".*"
+rabbitmqctl add_user telesucker telesucker
+rabbitmqctl set_permissions -p / telesucker ".*" ".*" ".*"
 rabbitmqctl add_user processor processor
 rabbitmqctl set_permissions -p / processor ".*" ".*" ".*"
+rabbitmqctl add_user shrinker shrinker
+rabbitmqctl set_permissions -p / shrinker ".*" ".*" ".*"
 rabbitmqctl add_user analyzer analyzer
 rabbitmqctl set_permissions -p / analyzer ".*" ".*" ".*"
 rabbitmqctl add_user cruncher cruncher

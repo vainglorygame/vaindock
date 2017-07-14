@@ -9,14 +9,14 @@ docker-compose up -d (if you want to run in background)
 http://localhost:5050/browser/ (fire up pgAdmin)
 
 Web:
- - host: vaindock_postgres_web
+ - host: postgres_web
  - port: 5432
  - user: vainweb
  - password: vainweb
  - db: vainsocial-web
 
  Raw:
- - host: vaindock_postgres_raw
+ - host: postgres_raw
  - port: 5432
  - user: vainraw
  - password: vainraw
