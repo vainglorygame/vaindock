@@ -395,6 +395,7 @@ services:
 
     analyzer:
       build: ../analyzer
+      restart: on-failure
       volumes:
           - ../analyzer:/usr/src/app
       depends_on:
@@ -409,6 +410,7 @@ services:
 
     analyzer_tournament:
       build: ../analyzer
+      restart: on-failure
       volumes:
           - ../analyzer:/usr/src/app
       depends_on:
