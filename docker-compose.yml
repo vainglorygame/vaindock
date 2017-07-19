@@ -390,7 +390,7 @@ services:
           - db-web
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-tournament/vaintournament
+          - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=crunch_tournament
 
     analyzer:
