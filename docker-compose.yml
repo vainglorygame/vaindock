@@ -16,23 +16,23 @@ services:
       depends_on:
         - queue
         - db-web
-        - db-brawl
+        # - db-brawl
         - db-tournament
         - bridge
         - processor
-        - processor_brawl
+        # - processor_brawl
         - processor_tournament
         - shrinker
         - shrinker_brawl
         - shrinker_tournament
         - apigrabber
-        - apigrabber_brawl
+        # - apigrabber_brawl
         - apigrabber_tournament
         - cruncher
         - telesucker
         - telesucker_tournament
-        - analyzer
-        - analyzer_tournament
+        # - analyzer
+        # - analyzer_tournament
 
     backend_light:
       image: tianon/true
