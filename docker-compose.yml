@@ -28,7 +28,9 @@ services:
         - apigrabber
         - apigrabber_brawl
         - apigrabber_tournament
-        - cruncher
+        - cruncher_global
+        - cruncher_player
+        - cruncher_global_tournament
         - telesucker
         - telesucker_tournament
         - analyzer
@@ -45,7 +47,8 @@ services:
         - processor
         - shrinker
         - apigrabber
-        - cruncher
+        - cruncher_global
+        - cruncher_player
         - telesucker
 
     frontend:
@@ -282,7 +285,10 @@ services:
           - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
           - QUEUE=process
           - ANALYZE_QUEUE=analyze
+          - CRUNCH_QUEUE=crunch_global
+          - CRUNCH_PLAYER_QUEUE=crunch_player
           - DOANALYZEMATCH=true
+          - DOCRUNCHMATCH=true
 
     processor_brawl:
         build: ../processor
@@ -361,7 +367,7 @@ services:
           - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=shrink_tournament
 
-    cruncher:
+    cruncher_global:
         build: ../cruncher
         stop_signal: SIGINT
         restart: on-failure
@@ -374,11 +380,30 @@ services:
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
           - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
-          - QUEUE=crunch
+          - QUEUE=crunch_global
+          - SCRIPT=crunch_global.sql
           - BATCHSIZE=500
           - SLOWMODE=0
 
-    cruncher_tournament:
+    cruncher_player:
+        build: ../cruncher
+        stop_signal: SIGINT
+        restart: on-failure
+        volumes:
+          - ../cruncher:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+          - db-web
+        environment:
+          - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
+          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - QUEUE=crunch_player
+          - SCRIPT=crunch_player.sql
+          - BATCHSIZE=500
+          - SLOWMODE=0
+
+    cruncher_global_tournament:
         build: ../cruncher
         stop_signal: SIGINT
         restart: on-failure
