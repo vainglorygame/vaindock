@@ -16,25 +16,25 @@ services:
       depends_on:
         - queue
         - db-web
-        - db-brawl
+        # - db-brawl
         - db-tournament
         - bridge
         - processor
-        - processor_brawl
+        # - processor_brawl
         - processor_tournament
         - shrinker
         - shrinker_brawl
         - shrinker_tournament
         - apigrabber
-        - apigrabber_brawl
+        # - apigrabber_brawl
         - apigrabber_tournament
         - cruncher_global
         - cruncher_player
         - cruncher_global_tournament
         - telesucker
         - telesucker_tournament
-        - analyzer
-        - analyzer_tournament
+        # - analyzer
+        # - analyzer_tournament
 
     backend_light:
       image: tianon/true
@@ -415,7 +415,7 @@ services:
           - db-web
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-tournament/vaintournament
+          - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=crunch_tournament
 
     analyzer:
