@@ -33,7 +33,7 @@ services:
         - cruncher_global_tournament
         - telesucker
         - telesucker_tournament
-        # - analyzer
+        - analyzer
         # - analyzer_tournament
 
     backend_light:
@@ -85,10 +85,10 @@ services:
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
-        links:
-            - db-web
-            - db-brawl
-            - db-tournament
+              #links:
+              #- db-web
+              #- db-brawl
+              #- db-tournament
         ports:
            - "2222:22"
         tty: true
@@ -112,14 +112,14 @@ services:
             dockerfile: Dockerfile-70
         volumes_from:
             - applications
-            - db-web
+              #- db-web
         expose:
             - "9000"
         links:
             - workspace
-            - db-web
-            - db-brawl
-            - db-tournament
+              #- db-web
+              #- db-brawl
+              #- db-tournament
         extra_hosts:
             # IMPORTANT: Replace with your Docker Host IP (will be appended to /etc/hosts)
             - "dockerhost:10.0.75.1"
@@ -140,11 +140,11 @@ services:
         links:
             - workspace
             - php-fpm
-            - queue
-            - bridge
-            - db-web
-            - db-brawl
-            - db-tournament
+              #- queue
+              #- bridge
+              #- db-web
+              #- db-brawl
+              #- db-tournament
         ports:
             - "80:80"
             - "443:443"
@@ -160,15 +160,16 @@ services:
         - ../orm:/usr/src/orm
       depends_on:
         - queue
-        - db-web
-        - db-brawl
-        - db-tournament
       environment:
         - RABBITMQ_URI=amqp://bridge:bridge@queue/
-        - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+        - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
         - DATABASE_BRAWL_URI=mysql://vainbrawl:vainbrawl@db-brawl/vainbrawl
         - DATABASE_TOURNAMENT_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
         - REGIONS=na,eu,sg,sa,ea
+        - REGULAR_MODES=casual,ranked,casual_aral,blitz_pvp_ranked  # TODO!
+        - BRAWL_MODES=casual_aral,blitz_pvp_ranked
+        - TOURNAMENT_MODES=private,private_party_draft_match
+        - ANALYZE_MODES=casual,ranked
         - TOURNAMENT_REGIONS=tournament-na,tournament-eu,tournament-sg,tournament-sa,tournament-ea
         - BRAWL_RETENTION_DAYS=7
         - PLAYER_PROCESS_QUEUE=process
@@ -279,16 +280,12 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - queue
-          - db-web
         environment:
           - RABBITMQ_URI=amqp://processor:processor@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
           - QUEUE=process
-          - ANALYZE_QUEUE=analyze
-          - CRUNCH_QUEUE=crunch_global
-          - CRUNCH_PLAYER_QUEUE=crunch_player
           - DOANALYZEMATCH=true
-          - DOCRUNCHMATCH=true
+          - ANALYZE_QUEUE=analyze
 
     processor_brawl:
         build: ../processor
@@ -329,13 +326,15 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - queue
-          - db-web
         environment:
           - RABBITMQ_URI=amqp://shrinker:shrinker@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
           - QUEUE=shrink
-          - ANALYZE_QUEUE=analyze
-          - DOANALYZEMATCH=true
+          - DOREAPMATCH=true
+          - REAP_QUEUE=reap
+          - BATCHSIZE=20
+          - CHUNKSIZE=20
+          - MAXCONNS=3
 
     shrinker_brawl:
         build: ../shrinker
@@ -367,6 +366,24 @@ services:
           - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
           - QUEUE=shrink_tournament
 
+    reaper:
+        build: ../reaper
+        stop_signal: SIGINT
+        restart: on-failure
+        volumes:
+          - ../reaper:/usr/src/app
+          - ../orm:/usr/src/orm
+        depends_on:
+          - queue
+        environment:
+          - RABBITMQ_URI=amqp://reaper:reaper@queue/
+          - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
+          - ELASTICSEARCH_URI=http://192.168.2.35:9200/
+          - QUEUE=reap
+          - MAXCONNS=3
+          - BATCHSIZE=30
+          - IDLE_TIMEOUT=1000
+
     cruncher_global:
         build: ../cruncher
         stop_signal: SIGINT
@@ -376,13 +393,12 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - queue
-          - db-web
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
           - QUEUE=crunch_global
           - SCRIPT=crunch_global.sql
-          - BATCHSIZE=500
+          - BATCHSIZE=20
           - SLOWMODE=0
 
     cruncher_player:
@@ -394,13 +410,12 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - queue
-          - db-web
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
-          - DATABASE_URI=mysql://vainweb:vainweb@db-web/vainweb
+          - DATABASE_URI=mysql://vain:vain@192.168.2.35/vainweb
           - QUEUE=crunch_player
           - SCRIPT=crunch_player.sql
-          - BATCHSIZE=500
+          - BATCHSIZE=20
           - SLOWMODE=0
 
     cruncher_global_tournament:
@@ -412,7 +427,7 @@ services:
           - ../orm:/usr/src/orm
         depends_on:
           - queue
-          - db-web
+            #- db-web
         environment:
           - RABBITMQ_URI=amqp://cruncher:cruncher@queue/
           - DATABASE_URI=mysql://vaintournament:vaintournament@db-tournament/vaintournament
@@ -425,13 +440,16 @@ services:
           - ../analyzer:/usr/src/app
       depends_on:
           - queue
-          - db-web
       environment:
           - RABBITMQ_URI=amqp://analyzer:analyzer@queue/
-          - DATABASE_URI=mysql+cymysql://vainweb:vainweb@db-web/vainweb
-          - BATCHSIZE=500
-          - CHUNKSIZE=100
+          - DATABASE_URI=mysql+cymysql://vain:vain@192.168.2.35/vainweb
+          - BATCHSIZE=30
+          - CHUNKSIZE=10
           - QUEUE=analyze
+          - DOCRUNCHMATCH=true
+          - CRUNCH_PLAYER_QUEUE=crunch_player
+          - DOTELESUCKMATCH=true
+          - TELESUCK_QUEUE=telesuck
 
     analyzer_tournament:
       build: ../analyzer
@@ -509,7 +527,7 @@ services:
           - "8881:15672"  # management guest/guest
         environment:
           - RABBITMQ_HIPE_COMPILE=1
-          - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
+#          - RABBITMQ_RECREATE_ON_STARTUP=true  # for debugging
 
 volumes:
     db-web-data:
@@ -521,4 +539,4 @@ volumes:
     queue-data:
         driver: "local"
     sessions:    ## nothing is connected to this (- ./data/sessions:/sessions)
-        driver: "local"
+       driver: "local"

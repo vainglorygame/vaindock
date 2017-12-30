@@ -27,6 +27,8 @@ rabbitmqctl add_user analyzer analyzer
 rabbitmqctl set_permissions -p / analyzer ".*" ".*" ".*"
 rabbitmqctl add_user cruncher cruncher
 rabbitmqctl set_permissions -p / cruncher ".*" ".*" ".*"
+rabbitmqctl add_user reaper reaper
+rabbitmqctl set_permissions -p / reaper ".*" ".*" ".*"
 echo "*** *** custom rabbitmq setup done. *** ***"
 ) &
 
